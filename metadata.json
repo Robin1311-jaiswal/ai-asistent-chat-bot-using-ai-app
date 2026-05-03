@@ -1,0 +1,6 @@
+{
+  "name": "Dost AI",
+  "description": "A smart, friendly, Hinglish-speaking personal assistant for daily productivity and questions.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["Chat", "Task Management", "Notes"]
+}
