@@ -72,10 +72,18 @@ const openWhatsAppFn: FunctionDeclaration = {
 
 const getApiKey = () => {
   // Vite replaces the token 'process.env.GEMINI_API_KEY' with the actual value during build
-  // fallback to import.meta.env for standard Vite compatibility
-  const key = (process.env.GEMINI_API_KEY as string) || (import.meta.env.VITE_GEMINI_API_KEY as string);
+  // Fallback to import.meta.env for local dev and standard Vite patterns
+  // Using a separate variable helps avoid Vite's aggressive replacement if we want to check things
+  let key: string = "";
   
-  if (!key || key === "undefined" || key === "null" || key === "MY_GEMINI_API_KEY" || key === "PASTE_YOUR_REAL_API_KEY_HERE") {
+  try {
+    key = (process.env.GEMINI_API_KEY as string) || (import.meta.env.VITE_GEMINI_API_KEY as string) || "";
+  } catch (e) {
+    // In some environments, accessing process.env might throw
+    key = (import.meta.env?.VITE_GEMINI_API_KEY as string) || "";
+  }
+  
+  if (!key || key === "undefined" || key === "null" || key === "MY_GEMINI_API_KEY" || key === "PASTE_YOUR_REAL_API_KEY_HERE" || key.includes("PASTE_YOUR")) {
     return "";
   }
   return key;
@@ -101,10 +109,13 @@ export async function chatWithAI(messages: Message[]) {
       console.warn("Gemini API key is not set or is a placeholder.");
       
       let debugMsg = "Bhai, I can't connect to my AI brain. The API key is missing.";
-      if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY === "MY_GEMINI_API_KEY") {
-        debugMsg = "Bhai, you are using the placeholder 'MY_GEMINI_API_KEY' in Netlify. Go to Netlify settings and replace it with your REAL API key from Google AI Studio, then deploy again!";
-      } else {
-        debugMsg = "Bhai, check your GEMINI_API_KEY on Netlify. It needs to be your real key (starts with AIza...). Make sure to trigger a new deploy after saving it!";
+      
+      // If we are in the browser, check if we can see the key (for debugging)
+      const currentKey = getApiKey();
+      if (!currentKey) {
+        debugMsg = "Bhai, GEMINI_API_KEY nahi mil raha. Netlify settings mein jao, environment variable add karo, aur phir TRIGGER DEPLOY (Deploy Site) karo github update ke baad!";
+      } else if (currentKey === "MY_GEMINI_API_KEY") {
+        debugMsg = "Bhai, placeholder use ho raha hai. Isse hata ke REAL key dalo Google AI Studio se!";
       }
 
       return { 
